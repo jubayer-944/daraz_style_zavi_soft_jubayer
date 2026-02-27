@@ -1,6 +1,6 @@
-# daraz_style
+# daraz_style_zavi_soft_jubayer
 
-one Flutter screen that mimics a Daraz-style product listing_zavi soft_jubayer_bin_montasir
+A Flutter screen that mimics a Daraz-style product listing (Zavi Soft - Jubayer Bin Montasir)
 
 ## Getting Started
 
