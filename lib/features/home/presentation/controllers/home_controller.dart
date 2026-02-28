@@ -27,6 +27,10 @@ class HomeController extends GetxController
   final TokenStorage _tokenStorage;
 
   late final TabController tabController;
+  late final ScrollController scrollController;
+  final selectedTabIndex = 0.obs;
+  final _scrollOffsets = <int, double>{};
+  int _lastTabIndex = 0;
 
   final categories = <String>[
     'electronics',
@@ -61,7 +65,26 @@ class HomeController extends GetxController
   void onInit() {
     super.onInit();
     tabController = TabController(length: categories.length, vsync: this);
+    scrollController = ScrollController();
+    tabController.addListener(_onTabChanged);
     _checkLoginAndLoad();
+  }
+
+  void _onTabChanged() {
+    selectedTabIndex.value = tabController.index;
+    if (!tabController.indexIsChanging && scrollController.hasClients) {
+      final newIndex = tabController.index;
+      _scrollOffsets[_lastTabIndex] = scrollController.offset;
+      final saved = _scrollOffsets[newIndex] ?? 0;
+      _lastTabIndex = newIndex;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (scrollController.hasClients) {
+          scrollController.jumpTo(
+            saved.clamp(0.0, scrollController.position.maxScrollExtent),
+          );
+        }
+      });
+    }
   }
 
   Future<void> _checkLoginAndLoad() async {
@@ -115,6 +138,7 @@ class HomeController extends GetxController
   }
 
   Future<void> refreshAll() async {
+    debugPrint('[HomeController] refreshAll (root pull-to-refresh) called');
     _isRefreshing.value = true;
     _errorMessage.value = null;
     try {
@@ -136,16 +160,30 @@ class HomeController extends GetxController
   Future<void> _fetchUser() async {
     final fetchedUser = await _getUserUseCase();
     _user.value = fetchedUser;
+    debugPrint('[HomeController] User API response: $fetchedUser');
   }
 
   Future<void> _fetchProducts() async {
     final products = await _getProductsUseCase();
     _allProducts.value = products;
+    debugPrint('[HomeController] Products API response: ${products.length} items');
+    for (final p in products.take(3)) {
+      debugPrint('  - ${p.title} (\$${p.price})');
+    }
+    if (products.length > 3) {
+      debugPrint('  ... and ${products.length - 3} more');
+    }
+  }
+
+  void goToTab(int index) {
+    tabController.animateTo(index.clamp(0, categories.length - 1));
   }
 
   @override
   void onClose() {
+    tabController.removeListener(_onTabChanged);
     tabController.dispose();
+    scrollController.dispose();
     super.onClose();
   }
 }

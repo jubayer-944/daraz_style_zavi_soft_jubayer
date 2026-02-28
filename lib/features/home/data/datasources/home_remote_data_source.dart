@@ -77,6 +77,7 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
       final response = await _client.get<Map<String, dynamic>>('/users/1');
 
       if (response.statusCode == 200 && response.data != null) {
+        debugPrint('[RemoteDataSource] User API raw response: ${response.data}');
         return UserModel.fromJson(response.data!);
       }
 
@@ -98,7 +99,12 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
       final response = await _client.get<List<dynamic>>('/products');
 
       if (response.statusCode == 200 && response.data != null) {
-        return response.data!
+        final list = response.data!;
+        debugPrint('[RemoteDataSource] Products API raw response: ${list.length} items');
+        if (list.isNotEmpty) {
+          debugPrint('[RemoteDataSource] First product: ${list.first}');
+        }
+        return list
             .whereType<Map<String, dynamic>>()
             .map(ProductModel.fromJson)
             .toList();
